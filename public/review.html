@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuExtract – Candidate Review Queue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --accent2: #06b6d4;
+      --warn: #f59e0b;
+    }
+
+    /* ── Layout ── */
+    .rq-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.25rem;
+      width: 100%;
+      min-height: 80vh;
+    }
+
+    /* ── Sidebar ── */
+    .rq-sidebar {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      height: calc(100vh - 220px);
+      overflow-y: auto;
+      position: sticky;
+      top: 1.5rem;
+    }
+    .rq-sidebar h3 { font-family: var(--font-title); font-size: 1.05rem; font-weight: 700; }
+    .search-box { position: relative; }
+    .search-box input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-primary);
+      padding: .5rem .75rem .5rem 2rem;
+      border-radius: 8px;
+      font-size: .83rem;
+      outline: none;
+      font-family: var(--font-main);
+    }
+    .search-box i { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: .78rem; }
+    .cand-list { display: flex; flex-direction: column; gap: .5rem; }
+    .cand-card {
+      padding: .75rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.015);
+      border: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .cand-card:hover { border-color: var(--primary); background: rgba(99,102,241,0.06); }
+    .cand-card.active { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+    .cand-card h4 { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
+    .cand-card p { font-size: .75rem; color: var(--text-secondary); margin-bottom: .4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cand-meta { display: flex; justify-content: space-between; align-items: center; }
+
+    .status-pill { font-size: .65rem; font-weight: 700; padding: .15rem .45rem; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em; }
+    .status-pill.pending_review { background: rgba(245,158,11,.15); color: var(--warn); }
+    .status-pill.approved, .status-pill.corrected { background: rgba(16,185,129,.15); color: var(--success); }
+    .status-pill.rejected { background: rgba(239,68,68,.15); color: var(--error); }
+    .flag-badge { font-size: .65rem; font-weight: 700; padding: .15rem .45rem; border-radius: 4px; background: rgba(239,68,68,.15); color: var(--error); }
+
+    /* ── Detail Panel ── */
+    .rq-detail {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* sticky header strip */
+    .detail-topbar {
+      padding: 1.5rem 2rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: sticky;
+      top: 0;
+      background: rgba(9,10,15,0.92);
+      backdrop-filter: blur(20px);
+      z-index: 10;
+    }
+    .detail-topbar-row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .cand-headline h2 { font-family: var(--font-title); font-size: 1.5rem; font-weight: 800; }
+    .cand-headline-sub { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .35rem; font-size: .82rem; color: var(--text-secondary); }
+    .cand-headline-sub span { display: flex; align-items: center; gap: .35rem; }
+    .cand-headline-sub i { color: var(--primary); }
+    .topbar-actions { display: flex; gap: .6rem; align-items: center; }
+
+    /* stat boxes */
+    .stat-strip { display: flex; gap: .75rem; margin-top: 1rem; }
+    .stat-box { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: .65rem 1rem; display: flex; align-items: center; gap: .75rem; }
+    .stat-box-icon { font-size: 1.3rem; }
+    .stat-box-icon.ok { color: var(--success); }
+    .stat-box-icon.warn { color: var(--warn); }
+    .stat-box-icon.total { color: var(--primary); }
+    .stat-box-label { font-size: .72rem; color: var(--text-secondary); }
+    .stat-box-value { font-size: 1.3rem; font-family: var(--font-title); font-weight: 700; line-height: 1; }
+
+    /* scrollable body */
+    .detail-body {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      flex: 1;
+    }
+
+    /* ── Section titles ── */
+    .sec-title {
+      font-family: var(--font-title);
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding-bottom: .65rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: .85rem;
+    }
+    .sec-title i { color: var(--primary); }
+    .sec-title.warn-title i { color: var(--warn); }
+    .sec-title.err-title i { color: var(--error); }
+
+    /* ── Flags needing review ── */
+    .flag-block {
+      background: rgba(245,158,11,0.04);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .flag-item { display: flex; flex-direction: column; gap: .4rem; }
+    .flag-item-header { display: flex; align-items: center; gap: .5rem; font-size: .8rem; font-weight: 700; color: var(--warn); }
+    .flag-item-label { font-size: .82rem; color: var(--text-secondary); }
+    .flag-item-value { font-size: .9rem; font-weight: 600; font-family: monospace; color: var(--text-primary); }
+    .flag-reason { font-size: .78rem; color: var(--warn); display: flex; gap: .35rem; align-items: flex-start; margin-top: .1rem; }
+    .edit-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 8px;
+      padding: .5rem .75rem;
+      color: var(--text-primary);
+      font-size: .9rem;
+      font-family: var(--font-main);
+      outline: none;
+      transition: var(--transition);
+      margin-top: .3rem;
+    }
+    .edit-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(99,102,241,0.2); }
+    .field-verified { display: flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--success); font-weight: 600; }
+    .field-unverified { display: flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--warn); font-weight: 600; }
+
+    /* ── Generic info table ── */
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table tr { border-bottom: 1px dashed rgba(255,255,255,0.05); }
+    .info-table tr:last-child { border: none; }
+    .info-table td { padding: .55rem .25rem; font-size: .875rem; vertical-align: top; }
+    .info-table td:first-child { color: var(--text-secondary); width: 38%; font-weight: 500; }
+    .info-table td:last-child { font-weight: 500; }
+
+    /* ── Skills grid ── */
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem; }
+    .skill-chip {
+      padding: .45rem .75rem;
+      border-radius: 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .4rem;
+    }
+    .skill-chip.verified { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.18); }
+    .skill-chip.unverified { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25); }
+    .skill-chip input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px dashed rgba(245,158,11,.5);
+      color: var(--text-primary);
+      font-size: .82rem;
+      font-weight: 600;
+      outline: none;
+      width: 100%;
+    }
+
+    /* ── Experience blocks ── */
+    .exp-block {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: .75rem;
+    }
+    .exp-block-title { font-weight: 700; font-size: .95rem; margin-bottom: .15rem; }
+    .exp-block-sub { font-size: .8rem; color: var(--text-secondary); margin-bottom: .75rem; }
+    .exp-field-row { display: flex; flex-direction: column; gap: .2rem; margin-bottom: .65rem; }
+    .exp-field-label { font-size: .75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+    .exp-field-val { font-size: .88rem; }
+
+    /* ── Cert / Project cards ── */
+    .cert-card, .proj-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: .65rem;
+    }
+    .cert-card-title, .proj-card-title { font-weight: 700; font-size: .95rem; margin-bottom: .35rem; }
+    .proj-card-desc { font-size: .85rem; color: var(--text-secondary); line-height: 1.55; }
+    .proj-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+    .proj-tag { font-size: .72rem; font-weight: 600; background: rgba(99,102,241,.12); color: var(--primary); padding: .15rem .55rem; border-radius: 30px; }
+
+    /* ── Resume viewer ── */
+    .resume-viewer {
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1.25rem;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .resume-viewer pre { font-family: 'Courier New', monospace; font-size: .82rem; line-height: 1.65; white-space: pre-wrap; word-break: break-word; color: rgba(248,250,252,.8); }
+
+    /* ── Collapsible accordion ── */
+    .accordion-trigger {
+      width: 100%;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: var(--transition);
+    }
+    .accordion-trigger:hover { background: rgba(255,255,255,0.04); }
+    .accordion-body { display: none; padding: .75rem .25rem 0; }
+    .accordion-body.open { display: block; }
+    .val-group { margin-bottom: 1rem; }
+    .val-group-title { font-size: .8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
+    .val-row { display: flex; align-items: center; gap: .5rem; font-size: .85rem; padding: .3rem 0; }
+    .val-row i.ok { color: var(--success); }
+    .val-row i.warn { color: var(--warn); }
+
+    /* ── Action footer ── */
+    .detail-footer {
+      padding: 1.25rem 2rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: flex-end;
+      gap: .75rem;
+      background: rgba(9,10,15,0.6);
+      position: sticky;
+      bottom: 0;
+    }
+    .btn { padding: .65rem 1.5rem; border-radius: 10px; font-size: .9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: .5rem; font-family: var(--font-main); transition: var(--transition); border: none; }
+    .btn-reject { background: rgba(239,68,68,.12); color: var(--error); border: 1px solid rgba(239,68,68,.25); }
+    .btn-reject:hover { background: rgba(239,68,68,.2); }
+    .btn-save { background: rgba(99,102,241,.12); color: var(--primary); border: 1px solid rgba(99,102,241,.25); }
+    .btn-save:hover { background: rgba(99,102,241,.2); }
+    .btn-approve { background: linear-gradient(135deg, var(--success), #059669); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,.3); }
+    .btn-approve:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16,185,129,.45); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    /* ── Toast ── */
+    .rq-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: .75rem 1.25rem;
+      border-radius: 10px;
+      font-size: .88rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: .6rem;
+      z-index: 1000;
+      animation: fadeIn .3s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .rq-toast.success { background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3); color: var(--success); }
+    .rq-toast.error { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: var(--error); }
+    .rq-toast.info { background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.3); color: var(--primary); }
+
+    /* ── Empty state ── */
+    .rq-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      padding: 3rem;
+      gap: 1rem;
+    }
+    .rq-empty i { font-size: 3rem; color: var(--text-secondary); }
+    .rq-empty h3 { font-family: var(--font-title); font-size: 1.1rem; }
+    .rq-empty p { color: var(--text-secondary); font-size: .88rem; }
+
+    /* scrollbar */
+    .rq-sidebar::-webkit-scrollbar, .detail-body::-webkit-scrollbar, .resume-viewer::-webkit-scrollbar { width: 5px; }
+    .rq-sidebar::-webkit-scrollbar-thumb, .detail-body::-webkit-scrollbar-thumb, .resume-viewer::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 10px; }
+
+    @media (max-width: 900px) {
+      .rq-layout { grid-template-columns: 1fr; }
+      .rq-sidebar { position: static; height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <main class="app-container" style="max-width: 1240px;">
+    <header class="app-header" style="text-align:left; align-items:flex-start;">
+      <div class="logo">
+        <i class="fa-solid fa-list-check logo-icon"></i>
+        <h1>DocuExtract Audit</h1>
+      </div>
+      <p class="tagline" style="margin:0;">Audit parsed candidate extractions and flag verification details</p>
+    </header>
+
+    <nav class="nav-tabs">
+      <a href="index.html" class="nav-tab"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</a>
+      <a href="review.html" class="nav-tab active"><i class="fa-solid fa-list-check"></i> Review Queue</a>
+    </nav>
+
+    <div class="rq-layout">
+
+      <!-- ════ LEFT SIDEBAR ════ -->
+      <aside class="rq-sidebar">
+        <h3>Candidates Queue</h3>
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search by name, email…">
+        </div>
+        <div class="filter-row" style="display:flex; gap:.4rem;">
+          <select id="statusFilter" style="flex:1; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:var(--text-primary); padding:.4rem .6rem; border-radius:8px; font-size:.78rem; outline:none; font-family:var(--font-main);">
+            <option value="">All Statuses</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="corrected">Corrected</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="cand-list" id="candidateList">
+          <div style="text-align:center; color:var(--text-secondary); padding:2rem;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem; margin-bottom:.5rem;"></i>
+            <p>Loading queue…</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ════ RIGHT DETAIL ════ -->
+      <section class="rq-detail" id="detailPanel">
+        <div class="rq-empty" id="emptyState">
+          <i class="fa-solid fa-folder-open"></i>
+          <h3>No Candidate Selected</h3>
+          <p>Select a candidate from the sidebar to begin reviewing.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="rq-toast" id="rqToast"><i class="fa-solid fa-circle-check"></i><span id="rqToastMsg"></span></div>
+
+  <script src="review.js"></script>
+</body>
+</html>

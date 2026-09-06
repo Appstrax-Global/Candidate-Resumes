@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuExtract - Premium PDF & DOCX Text Extractor</title>
+  <meta name="description" content="Extract text locally from PDF and DOCX files instantly and forward directly to n8n webhook.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <main class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+        <h1>DocuExtract</h1>
+      </div>
+      <p class="tagline">Local, instant PDF & DOCX text extraction with automated webhook forwarding</p>
+    </header>
+
+    <nav class="nav-tabs">
+      <a href="index.html" class="nav-tab active"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</a>
+      <a href="review.html" class="nav-tab"><i class="fa-solid fa-list-check"></i> Review Queue</a>
+    </nav>
+
+    <section class="main-card">
+      <!-- Drag & Drop Zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf,.docx" multiple style="display: none;">
+        <div class="drop-zone-content">
+          <div class="icon-wrapper">
+            <i class="fa-solid fa-cloud-arrow-up cloud-icon"></i>
+          </div>
+          <h3>Drag & Drop files here</h3>
+          <p class="drop-subtitle">or <span class="browse-btn">browse your computer</span></p>
+          <div class="supported-formats">
+            <span class="format-badge"><i class="fa-regular fa-file-pdf"></i> PDF</span>
+            <span class="format-badge"><i class="fa-regular fa-file-word"></i> DOCX</span>
+          </div>
+          <p class="limit-text">Maximum file size: 20 MB per file</p>
+        </div>
+      </div>
+
+      <!-- File List: Shows selected files before/after extraction -->
+      <div class="file-list-section" id="fileListSection" style="display: none;">
+        <div class="file-list-header">
+          <h4><i class="fa-solid fa-list-check"></i> Selected Files</h4>
+          <button class="clear-files-btn" id="clearFilesBtn"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+        </div>
+        <ul class="file-list" id="fileList">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+
+      <!-- Upload Progress -->
+      <div class="status-card" id="statusCard" style="display: none;">
+        <div class="status-header">
+          <div class="file-info">
+            <i class="fa-regular fa-file-code file-icon"></i>
+            <div>
+              <h4 id="statusFileName">Uploading...</h4>
+              <p id="statusFileSize">0 MB</p>
+            </div>
+          </div>
+          <button class="cancel-btn" id="cancelBtn" title="Cancel"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="status-footer">
+          <span id="statusText">Uploading files...</span>
+          <span id="progressPercentage">0%</span>
+        </div>
+      </div>
+
+      <!-- Extraction Results Panel -->
+      <div class="results-panel" id="resultsPanel" style="display: none;">
+        <div class="results-header">
+          <div class="success-badge" id="resultsStatusBadge">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Extracted</span>
+          </div>
+          <div class="meta-stats">
+            <span class="meta-item"><i class="fa-regular fa-file-lines"></i> <strong id="resTotalFiles">0</strong> files</span>
+            <span class="meta-item"><i class="fa-solid fa-font"></i> <strong id="resTotalChars">0</strong> total chars</span>
+          </div>
+        </div>
+
+        <!-- Preview a selected file's text -->
+        <div class="extracted-text-section">
+          <div class="section-title-bar">
+            <div class="dropdown-container">
+              <label for="fileResultSelect" class="select-label">Preview:</label>
+              <select id="fileResultSelect" class="file-select-dropdown"></select>
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" id="copyBtn" title="Copy text"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+          </div>
+          <div class="text-container">
+            <pre id="extractedText">Select a file above to preview its extracted text.</pre>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="submit-action-section">
+          <button class="primary-submit-btn" id="submitWebhookBtn">
+            <i class="fa-solid fa-paper-plane"></i> Submit to Webhook
+          </button>
+          <div class="submit-status-msg" id="submitStatusMsg" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Error Toast -->
+      <div class="error-toast" id="errorToast" style="display: none;">
+        <i class="fa-solid fa-circle-exclamation error-icon"></i>
+        <div class="error-message-text" id="errorText">An error occurred.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Secure local extraction. Files are deleted immediately after processing.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
