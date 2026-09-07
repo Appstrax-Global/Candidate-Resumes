@@ -6818,3 +6818,8 @@ Require stack:
 [2026-09-06T18:59:16.156Z] [INFO] Cleaned up temporary file: E:\Srinivas\PDF\PDF\uploads\documents-1788721153234-878177067.pdf
 [2026-09-06T18:59:17.013Z] [INFO] Saved extraction record to Supabase with ID 931 (candidate_id: C1910) for: Pooja_Khot_1Y_Resume.pdf
 [2026-09-06T18:59:17.014Z] [INFO] Cleaned up temporary file: E:\Srinivas\PDF\PDF\uploads\documents-1788721153343-588021271.pdf
+[2026-09-07T03:40:24.955Z] [INFO] Server is running in production mode on http://localhost:3000
+[2026-09-07T03:40:24.957Z] [INFO] Running pdfjs-dist fallback self-test...
+[2026-09-07T03:40:26.482Z] [INFO] ✅ pdfjs-dist fallback self-test passed successfully.
+[2026-09-07T03:40:27.365Z] [INFO] Successfully connected to Supabase PostgreSQL database.
+[2026-09-07T03:40:27.684Z] [INFO] Database extractions table initialized.
